@@ -1,10 +1,14 @@
-import { tweetsData } from "./data.js";
-const tweetInput = document.getElementById("tweet-input");
-const tweetBtn = document.getElementById("tweet-btn");
+import { tweetsData as initialTweetsData } from "./data.js";
+import { v4 as uuidv4 } from "https://cdn.jsdelivr.net/npm/uuid@11.0.5/+esm";
 
-tweetBtn.addEventListener("click", () => {
-	console.log(tweetInput.value);
-});
+let tweetsData =
+	JSON.parse(localStorage.getItem("tweetsData")) || initialTweetsData;
+
+console.log(tweetsData);
+
+function saveToLocalStorage() {
+	localStorage.setItem("tweetsData", JSON.stringify(tweetsData));
+}
 
 document.addEventListener("click", (e) => {
 	if (e.target.dataset.like) {
@@ -13,6 +17,8 @@ document.addEventListener("click", (e) => {
 		handleRetweetClick(e.target.dataset.retweet);
 	} else if (e.target.dataset.reply) {
 		handleReplyClick(e.target.dataset.reply);
+	} else if (e.target.id === "tweet-btn") {
+		handleTweetBtnClick();
 	}
 });
 
@@ -28,12 +34,13 @@ function handleLikeClick(tweetId) {
 	}
 
 	targetTweetObj.isLiked = !targetTweetObj.isLiked;
+	saveToLocalStorage();
 	render();
 }
 
 function handleRetweetClick(tweetId) {
 	const targetTweetObj = tweetsData.filter((tweet) => {
-		return (tweet.uuid = tweetId);
+		return tweet.uuid === tweetId;
 	})[0];
 	if (targetTweetObj.isRetweeted) {
 		targetTweetObj.retweets--;
@@ -41,11 +48,32 @@ function handleRetweetClick(tweetId) {
 		targetTweetObj.retweets++;
 	}
 	targetTweetObj.isRetweeted = !targetTweetObj.isRetweeted;
+	saveToLocalStorage();
 	render();
 }
 
 function handleReplyClick(replyId) {
 	document.getElementById(`replies-${replyId}`).classList.toggle("hidden");
+}
+
+function handleTweetBtnClick() {
+	const tweetInput = document.getElementById("tweet-input");
+	if (tweetInput.value) {
+		tweetsData.unshift({
+			handle: `@Scrimba`,
+			profilePic: `images/scrimbalogo.png`,
+			likes: 0,
+			retweets: 0,
+			tweetText: tweetInput.value,
+			replies: [],
+			isLiked: false,
+			isRetweeted: false,
+			uuid: uuidv4(),
+		});
+	}
+	tweetInput.value = "";
+	saveToLocalStorage();
+	render();
 }
 
 function getFeedHtml() {
